@@ -58,40 +58,12 @@ class PeakTech_DMM3315(object):
             # some debug info
             print("connected to PeakTech_DMM3315")
 
-            sleep(1)
-
-            # get first line
-            self.raw = self.serial_port.readline()
-
-            """
-            MMrange = int(self.raw[0])
-            MMdigits = int(self.raw[1:5])
-            MMfunction_byte = self.raw[5]
-            MMstatus_byte = ord(self.raw[6])
-            MMoption1_byte = ord(self.raw[7])
-            MMoption2_byte = ord(self.raw[8])
-            """
-
-            for r in self.raw:
-                print("%x"%(int(r)) )
-
-            sleep(1)
-            print( self.serial_port.readline() )
-
-            """
-            rxcount = self.serial_port.inWaiting()
-            if rxcount > 0:
-                print("rxcount: ", rxcount)
-                # fetch all data from serial buffer
-                buf = self.serial_port.read(rxcount)
-                print(buf)
-
             try:
                 # start rx thread:
                 self.start_rx_thread()
             except serial.SerialTimeoutException as e:
                 raise PeakTech_DMM3315_Exception(e)
-            """
+
         except Exception as e:
             self.serial_port.close()
             raise e
@@ -127,6 +99,19 @@ class PeakTech_DMM3315(object):
             # wait for thread to end, sleep 1ms
             sleep(0.001)
 
+    def parseString(self, raw):
+        if len(raw) != 11:
+            print("input data length mismatch %d received 11 exspected"%(len(raw)))
+            return None, None
+
+        for r in self.raw:
+            print("%x"%(int(r)), end=" ")
+        print()
+
+        # insert parsing of data string
+
+        return None, None
+
     def rx_thread(self):
         """ main rx thread. this thread will take care to
             handle the data from the serial port"""
@@ -135,26 +120,15 @@ class PeakTech_DMM3315(object):
 
         """ process data as long as requested """
         while self.rx_thread_state == PeakTech_DMM3315.RX_THREAD_RUNNING:
+            self.raw = self.serial_port.readline()
+            # create value and unit form read string
+            value, unit = self.parseString(self.raw)
+            # give these information to the listeners
+            for listener in self.listeners:
+                listener(value, unit)
 
-            # fetch bytes if available
-            rxcount = self.serial_port.inWaiting()
-            if rxcount > 0:
-                print("rxcount: ", rxcount)
-                # fetch all data from serial buffer
-                buf = self.serial_port.read(rxcount)
-                if PY_VERSION == 2:
-                    buf = [ord(b) for b in buf]
-
-                print(buf)
-
-                # create value and unit form read string
-                value, unit = None, None
-                # give these information to the listeners
-                for listener in self.listeners:
-                    listener(value, unit)
-
-                # clear message
-                self.incoming_message = ""
+            # clear message
+            self.raw = ""
 
         # thread stopped...
         self.rx_thread_state = PeakTech_DMM3315.RX_THREAD_STOPPED
