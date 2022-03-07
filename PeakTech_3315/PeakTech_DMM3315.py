@@ -5,7 +5,7 @@
 """
 
 import serial
-from time import sleep
+import time
 import threading
 
 class PeakTech_DMM3315_Exception(Exception):
@@ -72,6 +72,10 @@ class PeakTech_DMM3315(object):
         self.listeners = []
         self.DEBUG = False      # set to True to debug the received messages
 
+        self.value = 0
+        self.unit = ""
+        self.hasNewMeasurement = 0
+
     def connect(self, port):
         """Connect to PeakTech_DMM3315 on given port.
            Opens the serial port, clears pending characters and send close command
@@ -113,6 +117,17 @@ class PeakTech_DMM3315(object):
         #except serial.SerialException as e:
         #   raise PeakTech_DMM3315_Exception("{0} - {1}: {2}".format(port, e.errno, e.strerror))
 
+    def waitForNewMessage(self):
+        """
+            wait until a new mesage is received and parsed
+        """
+        while not self.hasNewMeasurement:
+            time.sleep(0.5)
+
+    def getMeasurement(self):
+        self.hasNewMeasurement = 0
+        return self.value, self.unit
+
     def disconnect(self):
         """Disconnect. Close serial port connection"""
         try:
@@ -140,7 +155,7 @@ class PeakTech_DMM3315(object):
         self.rx_thread_state = PeakTech_DMM3315.RX_THREAD_TERMINATE
         while self.rx_thread_state != PeakTech_DMM3315.RX_THREAD_STOPPED:
             # wait for thread to end, sleep 1ms
-            sleep(0.001)
+            time.sleep(0.001)
 
     def parseString(self, raw):
         if len(raw) != 11:
@@ -183,10 +198,12 @@ class PeakTech_DMM3315(object):
         while self.rx_thread_state == PeakTech_DMM3315.RX_THREAD_RUNNING:
             raw = self.serial_port.readline()
             # create value and unit form read string
-            value, unit = self.parseString(raw)
+            self.value, self.unit = self.parseString(raw)
             # give these information to the listeners
             for listener in self.listeners:
-                listener(value, unit)
+                listener(self.value, self.unit)
+
+            self.hasNewMeasurement += 1
             # clear message
             raw = ""
         # thread stopped...
