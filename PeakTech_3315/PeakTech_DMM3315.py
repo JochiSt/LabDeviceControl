@@ -41,6 +41,30 @@ class PeakTech_DMM3315(object):
             0x3A : (ADP3,""),
     }
 
+    RANGE_TABLE = [
+            # VOLTAGE
+            [400.0, 4.000, 40.00, 400.0, 4000],
+            # uA CURRENT
+            [40.00, 400.0],
+            # mA CURRENT
+            [400.0, 4000],
+            # A Current
+            [40],
+            # OHM
+            [400.0, 4.000e3, 40.00e3, 400.0e3, 4.00e6, 40.0e6],
+            # CONTINUITY
+            [40],
+            # DIODE
+            [40],
+            # FREQUENCY
+            [4.000e3, 40.00e3, 400.0e3, 4.000e3, 40.00e3, 400.0e3],
+            #[40.00e3, 400.0e3, 4.000e3, 40e3, 400e3, 4000e3],
+            # CAPACITY
+            [4e-9, 40e-9, 400e-9, 4e-6, 40e-6, 400e-6, 4e-3, 40e-3],
+            # TEMPERATURE
+            [40],
+            ]
+
     def __init__(self):
         """ initialiser """
         self.serial_port = None
@@ -128,16 +152,24 @@ class PeakTech_DMM3315(object):
         print()
 
         MMrange = int(raw[0])
-        print(MMrange)                  #
+        MMrange -= 0x30
         MMdigits = int(raw[1:5])    # convert into digits
-        print("Digits", MMdigits)
         MMfunct = int(raw[5])
-        print("%x %d"%( MMfunct, MMfunct ) )
-        function, unit = PeakTech_DMM3315.FUNCTION_TABLE[MMfunct]
-        print(unit)
-        # insert parsing of data string
+        try:
+            function, unit = PeakTech_DMM3315.FUNCTION_TABLE[MMfunct]
+        except IndexError:
+            print("FUNCTION_TABLE[",MMfunct, "] not found")
+            function = 0
+            unit = None
+        try:
+            multiplier = PeakTech_DMM3315.RANGE_TABLE[function][MMrange]
+        except IndexError:
+            print("RANGE_TABLE[",function, "][", MMrange, "] not found")
+            multiplier = 4000   # results in digits = display
 
-        return None, unit
+        multiplier = multiplier / 4000
+        value = MMdigits * multiplier
+        return value, unit
 
     def rx_thread(self):
         """ main rx thread. this thread will take care to
