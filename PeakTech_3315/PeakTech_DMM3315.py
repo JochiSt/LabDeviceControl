@@ -106,16 +106,6 @@ class PeakTech_DMM3315(object):
         except serial.SerialException as e:
             raise PeakTech_DMM3315_Exception("{0} - {1}: {2}".format(self.serial_port.name, e.errno, e.strerror))
 
-    def open_can_channel(self, baudrate, mode):
-        """Open CAN channel.
-           Set given baudrate and open the CAN channel in given mode.
-
-           Keyword arguments:
-            baudrate -- Baudrate in bits/second
-            mode -- CAN bus accessing mode
-        """
-
-
     def start_rx_thread(self):
         """ start the serial receive thread"""
         self.rx_thread_state = PeakTech_DMM3315.RX_THREAD_RUNNING
