@@ -42,26 +42,58 @@ class PeakTech_DMM3315(object):
         """
         try:
             # open serial port
-            self.serial_port = serial.Serial(port, baudrate=2400,
-                                             bytesize=serial.SEVENBITS,
-                                             parity=serial.PARITY_ODD,
-                                             stopbits=serial.STOPBITS_ONE,
-                                             timeout=PeakTech_DMM3315.READ_TIMEOUT)
+            self.serial_port = serial.Serial(port,
+                                             baudrate=2400,
+                                             bytesize = serial.SEVENBITS,
+                                             parity = serial.PARITY_ODD,
+                                             stopbits = serial.STOPBITS_ONE,
+                                             timeout = PeakTech_DMM3315.READ_TIMEOUT)
 
-            self.serial_port.setDTR(1)    # switch on DTR, otherwise it will not work
-
+            self.serial_port.dtr = True    # switch on DTR, otherwise it will not work
+            self.serial_port.rts = False
+            # clear input and output
             self.serial_port.flush()
             self.serial_port.flushInput()  # reset_input_buffer()
 
             # some debug info
             print("connected to PeakTech_DMM3315")
 
+            sleep(1)
+
+            # get first line
+            self.raw = self.serial_port.readline()
+
+            """
+            MMrange = int(self.raw[0])
+            MMdigits = int(self.raw[1:5])
+            MMfunction_byte = self.raw[5]
+            MMstatus_byte = ord(self.raw[6])
+            MMoption1_byte = ord(self.raw[7])
+            MMoption2_byte = ord(self.raw[8])
+            """
+
+            for r in self.raw:
+                print("%x"%(int(r)) )
+
+            sleep(1)
+            print( self.serial_port.readline() )
+
+            """
+            rxcount = self.serial_port.inWaiting()
+            if rxcount > 0:
+                print("rxcount: ", rxcount)
+                # fetch all data from serial buffer
+                buf = self.serial_port.read(rxcount)
+                print(buf)
+
             try:
                 # start rx thread:
                 self.start_rx_thread()
             except serial.SerialTimeoutException as e:
                 raise PeakTech_DMM3315_Exception(e)
+            """
         except Exception as e:
+            self.serial_port.close()
             raise e
         #except serial.SerialException as e:
         #   raise PeakTech_DMM3315_Exception("{0} - {1}: {2}".format(port, e.errno, e.strerror))
@@ -117,6 +149,7 @@ class PeakTech_DMM3315(object):
             # fetch bytes if available
             rxcount = self.serial_port.inWaiting()
             if rxcount > 0:
+                print("rxcount: ", rxcount)
                 # fetch all data from serial buffer
                 buf = self.serial_port.read(rxcount)
                 if PY_VERSION == 2:
