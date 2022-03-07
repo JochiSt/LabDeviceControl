@@ -20,6 +20,27 @@ class PeakTech_DMM3315(object):
     """ timeout for reading from serial port """
     READ_TIMEOUT = 1
 
+    """ enumerate all functions """
+    VOLTAGE, uACURRENT, mACURRENT, ACURRENT, OHM, CONTINUITY, DIODE, FREQUENCY, CAPACITY, TEMPERATURE, ADP0, ADP1, ADP2, ADP3 = range(14)
+
+    """ function list """
+    FUNCTION_TABLE = {
+            0x3B : (VOLTAGE,        "V"),
+            0x3D : (uACURRENT,    "A"),
+            0x39 : (mACURRENT,    "A"),
+            0x3F : (ACURRENT,       "A"),
+            0x33 : (OHM,                "Ohm"),
+            0x35 : (CONTINUITY,     "Ohm"),
+            0x31 : (DIODE,              "V" ),
+            0x32 : (FREQUENCY,      "Hz"),
+            0x36 : (CAPACITY,         "F" ),
+            0x34 : (TEMPERATURE,  "C"),
+            0x3E : (ADP0,""),
+            0x3C : (ADP1,""),
+            0x38 : (ADP2,""),
+            0x3A : (ADP3,""),
+    }
+
     def __init__(self):
         """ initialiser """
         self.serial_port = None
@@ -97,6 +118,7 @@ class PeakTech_DMM3315(object):
             sleep(0.001)
 
     def parseString(self, raw):
+        print("raw", raw)
         if len(raw) != 11:
             print("input data length mismatch %d received 11 exspected"%(len(raw)))
             return None, None
@@ -108,12 +130,14 @@ class PeakTech_DMM3315(object):
         MMrange = int(raw[0])
         print(MMrange)                  #
         MMdigits = int(raw[1:5])    # convert into digits
-
+        print("Digits", MMdigits)
         MMfunct = int(raw[5])
         print("%x %d"%( MMfunct, MMfunct ) )
+        function, unit = PeakTech_DMM3315.FUNCTION_TABLE[MMfunct]
+        print(unit)
         # insert parsing of data string
 
-        return None, None
+        return None, unit
 
     def rx_thread(self):
         """ main rx thread. this thread will take care to
