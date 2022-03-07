@@ -5,11 +5,8 @@
 """
 
 import serial
-import sys
 from time import sleep
 import threading
-
-PY_VERSION = sys.version_info[0]
 
 class PeakTech_DMM3315_Exception(Exception):
     def __init__(self, *args, **kwargs):
@@ -104,10 +101,16 @@ class PeakTech_DMM3315(object):
             print("input data length mismatch %d received 11 exspected"%(len(raw)))
             return None, None
 
-        for r in self.raw:
+        for r in raw:
             print("%x"%(int(r)), end=" ")
         print()
 
+        MMrange = int(raw[0])
+        print(MMrange)                  #
+        MMdigits = int(raw[1:5])    # convert into digits
+
+        MMfunct = int(raw[5])
+        print("%x %d"%( MMfunct, MMfunct ) )
         # insert parsing of data string
 
         return None, None
@@ -120,15 +123,15 @@ class PeakTech_DMM3315(object):
 
         """ process data as long as requested """
         while self.rx_thread_state == PeakTech_DMM3315.RX_THREAD_RUNNING:
-            self.raw = self.serial_port.readline()
+            raw = self.serial_port.readline()
             # create value and unit form read string
-            value, unit = self.parseString(self.raw)
+            value, unit = self.parseString(raw)
             # give these information to the listeners
             for listener in self.listeners:
                 listener(value, unit)
 
             # clear message
-            self.raw = ""
+            raw = ""
 
         # thread stopped...
         self.rx_thread_state = PeakTech_DMM3315.RX_THREAD_STOPPED
