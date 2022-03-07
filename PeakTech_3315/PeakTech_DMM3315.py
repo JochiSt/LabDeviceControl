@@ -70,6 +70,7 @@ class PeakTech_DMM3315(object):
         self.serial_port = None
         self.rx_thread_state = PeakTech_DMM3315.RX_THREAD_STOPPED
         self.listeners = []
+        self.DEBUG = False      # set to True to debug the received messages
 
     def connect(self, port):
         """Connect to PeakTech_DMM3315 on given port.
@@ -142,14 +143,15 @@ class PeakTech_DMM3315(object):
             sleep(0.001)
 
     def parseString(self, raw):
-        print("raw", raw)
         if len(raw) != 11:
             print("input data length mismatch %d received 11 exspected"%(len(raw)))
             return None, None
 
-        for r in raw:
-            print("%x"%(int(r)), end=" ")
-        print()
+        if self.DEBUG:
+            print("raw", raw)
+            for r in raw:
+                print("%x"%(int(r)), end=" ")
+            print()
 
         MMrange = int(raw[0])
         MMrange -= 0x30
@@ -185,10 +187,8 @@ class PeakTech_DMM3315(object):
             # give these information to the listeners
             for listener in self.listeners:
                 listener(value, unit)
-
             # clear message
             raw = ""
-
         # thread stopped...
         self.rx_thread_state = PeakTech_DMM3315.RX_THREAD_STOPPED
 
