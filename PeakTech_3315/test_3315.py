@@ -7,7 +7,7 @@ mm = PeakTech_DMM3315()
 
 raw = b'001996002\r\n'
 print(raw)
-mm.parseString(raw)
+print( mm.parseString(raw) )
 
 #mm.connect("COM9")
 #time.sleep(5)
