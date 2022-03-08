@@ -203,7 +203,9 @@ class PeakTech_DMM3315(object):
             for listener in self.listeners:
                 listener(self.value, self.unit)
 
-            self.hasNewMeasurement += 1
+            # if measurement is None, we do not have a valid measurement
+            if self.value is not None:
+                self.hasNewMeasurement += 1
             # clear message
             raw = ""
         # thread stopped...
