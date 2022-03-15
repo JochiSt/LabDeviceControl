@@ -1,0 +1,3 @@
+[submodule "usb_relay"]
+	path = usb_relay
+	url = https://github.com/jaketeater/Very-Simple-USB-Relay
